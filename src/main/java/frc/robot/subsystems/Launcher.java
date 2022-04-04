@@ -23,6 +23,7 @@ public class Launcher extends SubsystemBase {
   private SparkMaxPIDController m_pidController;
   private RelativeEncoder m_encoder;
   private double m_setpointRPM = LauncherConstants.desiredRPM;
+  private boolean launchHeight = true;
 
   /** Creates a new Launcher. */
   public Launcher() {
@@ -66,17 +67,28 @@ public class Launcher extends SubsystemBase {
     // This method will be called once per scheduler run during simulation
   }
 
+    
   public void launch() {
-    // System.out.print("in Launcher.launch\n");
-    // m_launcher1.set(LauncherConstants.launcherMotorSpeed);
-    m_pidController.setReference(m_setpointRPM, ControlType.kVelocity);
+    if(launchHeight){ m_pidController.setReference(LauncherConstants.launcherMotorHighSpeed * LauncherConstants.maxRPM, ControlType.kVelocity);}
+    else {  m_pidController.setReference(LauncherConstants.launcherMotorLowSpeed * LauncherConstants.maxRPM, ControlType.kVelocity);}
   }
 
   public void unclogLauncher() {
-    m_launcher1.set(- LauncherConstants.launcherMotorSpeed / 2);
+    if(launchHeight) {m_launcher1.set(-LauncherConstants.launcherMotorHighSpeed / 2);}
+    else { m_launcher1.set(- LauncherConstants.launcherMotorLowSpeed / 2);}
   }
+
+  public void doNothing(){}
 
   public void stopLauncher() {
     m_launcher1.set(0.0);
+  }
+
+  public void launchHigh(){
+    launchHeight = true;
+  }
+
+  public void launchLow(){
+    launchHeight = false;
   }
 }

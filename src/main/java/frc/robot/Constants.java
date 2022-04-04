@@ -177,7 +177,9 @@ public final class Constants {
         public final static double kMaxOutput = 1; 
         public final static double kMinOutput = -1;
         public final static double desiredRPM = 4000;
-        public final static double maxRPM = 5700;    
+        public final static double maxRPM = 5700;  
+        public final static double launcherMotorHighSpeed = 0.95;
+        public final static double launcherMotorLowSpeed = 0.7;  
     }
 
     public final static class ClimberElevatorConstants {

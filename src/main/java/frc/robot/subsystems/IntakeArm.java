@@ -85,6 +85,8 @@ public class IntakeArm extends TrapezoidProfileSubsystem {
     }
   }
 
+  public void doNothing(){}
+
   public ArmState getArmState() {
     return m_armState;
   }
