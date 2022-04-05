@@ -77,6 +77,7 @@ public class ClimberElevator extends TrapezoidProfileSubsystem {
     } else {
       setGoal(ClimberElevatorConstants.kUpPos_m);
       m_elevatorState = ElevatorState.UP;
+      enable();
     }
   }
 
@@ -86,7 +87,12 @@ public class ClimberElevator extends TrapezoidProfileSubsystem {
     } else {
       setGoal(ClimberElevatorConstants.kDownPos_m);
       m_elevatorState = ElevatorState.DOWN;
+      enable();
     }
+  }
+
+  public void stopClimberElevator() {
+    disable();
   }
 
   public ElevatorState getClimberElevatorState() {

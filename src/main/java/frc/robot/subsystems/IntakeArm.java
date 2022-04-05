@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import java.util.function.Supplier;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.ControlType;
@@ -14,32 +16,35 @@ import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj2.command.TrapezoidProfileSubsystem;
+import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.CAN_IDs;
 import frc.robot.Constants.IntakeArmConstants;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class IntakeArm extends TrapezoidProfileSubsystem {
+public class IntakeArm extends SubsystemBase {
   public enum ArmState {OPENED, CLOSED};
+  private static double kDt = 0.02;
 
   private CANSparkMax m_intakeArm = new CANSparkMax(CAN_IDs.intakeArm_ID, MotorType.kBrushless);
   private SparkMaxPIDController m_pidController;
   private final int m_pidSlot = 0;
   private ArmState m_armState = ArmState.CLOSED;
-  private TrapezoidProfile.State m_armPosVel = new TrapezoidProfile.State(0, 0);
-
+  private TrapezoidProfile.Constraints m_constraints = 
+    new TrapezoidProfile.Constraints(IntakeArmConstants.kMaxVelocityRadPerSecond, 
+              IntakeArmConstants.kMaxAccelerationRadPerSecSquared);
+  private TrapezoidProfile.State m_goal = new TrapezoidProfile.State();
+  private TrapezoidProfile.State m_setpoint = new TrapezoidProfile.State(IntakeArmConstants.kInitialPositionRad, 0);
   private final ArmFeedforward m_feedforward = new ArmFeedforward(
     IntakeArmConstants.kSVolts, IntakeArmConstants.kGVolts,
     IntakeArmConstants.kVVoltSecondPerRad, IntakeArmConstants.kAVoltSecondSquaredPerRad);
-
-  /** Creates a new IntakeArmNew. */
-  public IntakeArm() {
-    super(
-        // The constraints for the generated profiles
-        new TrapezoidProfile.Constraints(IntakeArmConstants.kMaxVelocityRadPerSecond, 
-        IntakeArmConstants.kMaxAccelerationRadPerSecSquared),
-        // The initial position of the mechanism
-        IntakeArmConstants.kInitialPositionRad);
-
+  private final Supplier<Double> m_leftTriggerAxisSupplier;
+  private final Supplier<Double> m_rightTriggerAxisSupplier;
+  
+  /** Creates a new IntakeArm. */
+  public IntakeArm(Supplier<Double> leftTriggerSupplier,
+      Supplier<Double> rightTriggerSupplier) {
+    m_leftTriggerAxisSupplier = leftTriggerSupplier;
+    m_rightTriggerAxisSupplier = rightTriggerSupplier;
     m_intakeArm.restoreFactoryDefaults();
     m_intakeArm.setIdleMode(IdleMode.kBrake);
     m_intakeArm.setSmartCurrentLimit(80);
@@ -63,6 +68,7 @@ public class IntakeArm extends TrapezoidProfileSubsystem {
     m_pidController.setIZone(0, m_pidSlot);
     m_pidController.setFF(0, m_pidSlot);
     m_pidController.setOutputRange(IntakeArmConstants.kMinOutput, IntakeArmConstants.kMaxOutput, m_pidSlot);
+
   }
 
   public void openArm() {
@@ -70,7 +76,7 @@ public class IntakeArm extends TrapezoidProfileSubsystem {
     if (m_armState == ArmState.OPENED) {
       return;
     } else {
-      setGoal(IntakeArmConstants.kOpenedPosArmRad);
+      m_goal = new TrapezoidProfile.State(IntakeArmConstants.kOpenedPosArmRad, 0);
       m_armState = ArmState.OPENED;
     }
   }
@@ -80,29 +86,35 @@ public class IntakeArm extends TrapezoidProfileSubsystem {
     if (m_armState == ArmState.CLOSED) {
       return;
     } else {
-      setGoal(IntakeArmConstants.kClosedPosArmRad);
+      m_goal = new TrapezoidProfile.State(IntakeArmConstants.kClosedPosArmRad, 0);
       m_armState = ArmState.CLOSED;
     }
   }
 
-  public void doNothing(){}
-
-  public ArmState getArmState() {
-    return m_armState;
-  }
-
-  public TrapezoidProfile.State getArmPosVel() {
-    return m_armPosVel;
-  }
-
 
   @Override
-  protected void useState(TrapezoidProfile.State state) {
-    // Use the computed profile state here.
-    // Calculate the feedforward from the sepoint
-    double feedforward = m_feedforward.calculate(state.position, state.velocity);
-    m_armPosVel = state;
-    m_pidController.setReference(state.position * IntakeArmConstants.kArmDegToNeoRotConversionFactor, 
+  public void periodic() {
+    // This method will be called once per scheduler run
+    if (m_rightTriggerAxisSupplier.get() > 0) {
+      closeArm();
+    } else if (m_leftTriggerAxisSupplier.get() > 0) {
+      openArm();
+    } else {
+      return;
+    }
+
+    // Create a motion profile with the given maximum velocity and maximum
+    // acceleration constraints for the next setpoint, the desired goal, and the
+    // current setpoint.
+    var profile = new TrapezoidProfile(m_constraints, m_goal, m_setpoint);
+
+    // Retrieve the profiled setpoint for the next timestep. This setpoint moves
+    // toward the goal while obeying the constraints.
+    m_setpoint = profile.calculate(kDt);
+
+    // Send setpoint to offboard controller PID
+    double feedforward = m_feedforward.calculate(m_setpoint.position, m_setpoint.velocity);
+    m_pidController.setReference(m_setpoint.position * IntakeArmConstants.kArmDegToNeoRotConversionFactor, 
       ControlType.kPosition, m_pidSlot, feedforward, ArbFFUnits.kVoltage);
   }
 }

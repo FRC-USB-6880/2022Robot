@@ -27,36 +27,14 @@ public class IntakeWheels extends SubsystemBase {
   public IntakeWheels() {
     m_intakeWheels.restoreFactoryDefaults();
     m_intakeWheels.setIdleMode(IdleMode.kCoast);
+    m_intakeWheels.setOpenLoopRampRate(0.5); // time in seconds to go from 0 to full throttle
 
     m_intakeWheels.setSmartCurrentLimit(30);
-
-    /**
-     * In order to use PID functionality for a controller, a SparkMaxPIDController object
-     * is constructed by calling the getPIDController() method on an existing
-     * CANSparkMax object
-     */
-    m_wheelPIDController = m_intakeWheels.getPIDController();
-
-    // Encoder object created to display velocity values
-    m_wheelEncoder = m_intakeWheels.getEncoder();
-
-    // set PID coefficients
-    m_wheelPIDController.setP(IntakeWheelConstants.wheelkP);
-    m_wheelPIDController.setI(IntakeWheelConstants.wheelkI);
-    m_wheelPIDController.setD(IntakeWheelConstants.wheelkD);
-    m_wheelPIDController.setIZone(IntakeWheelConstants.wheelkIz);
-    m_wheelPIDController.setFF(IntakeWheelConstants.wheelkFF);
-    m_wheelPIDController.setOutputRange(IntakeWheelConstants.kMinOutput, IntakeWheelConstants.kMaxOutput);
-
-    // display setpoint to dashboard
-    SmartDashboard.putNumber("Intake Wheels target RPM", m_wheelSetpointRPM);
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    m_wheelSetpointRPM = SmartDashboard.getNumber("Intake Wheels target RPM", m_wheelSetpointRPM);
-    SmartDashboard.putNumber("Intake Wheels Current RPM", m_wheelEncoder.getVelocity());
   }
 
   @Override
@@ -65,8 +43,7 @@ public class IntakeWheels extends SubsystemBase {
   }
 
   public void pullInCargo() {
-    // m_intakeWheels.set(IntakeConstants.wheelMotorSpeed);
-    m_wheelPIDController.setReference(m_wheelSetpointRPM, ControlType.kVelocity);
+    m_intakeWheels.set(IntakeWheelConstants.wheelMotorSpeed);
   }
 
   public void pushOutCargo() {

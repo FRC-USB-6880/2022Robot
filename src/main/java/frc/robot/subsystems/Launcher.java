@@ -5,6 +5,8 @@
 package frc.robot.subsystems;
 
 
+import java.util.function.Supplier;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
@@ -25,8 +27,12 @@ public class Launcher extends SubsystemBase {
   private double m_setpointRPM = LauncherConstants.desiredRPM;
   private boolean launchHeight = true;
 
+  private final Supplier<Integer> m_povSupplier;
+
   /** Creates a new Launcher. */
-  public Launcher() {
+  public Launcher(Supplier<Integer> povSupplier) {
+
+    m_povSupplier = povSupplier;
     m_launcher1.restoreFactoryDefaults();
     m_launcher2.restoreFactoryDefaults();
     m_launcher1.setIdleMode(IdleMode.kCoast);
@@ -57,8 +63,15 @@ public class Launcher extends SubsystemBase {
 
   @Override
   public void periodic() {
+    int povValue = m_povSupplier.get();
+    if (povValue == 180) {
+      launchHigh();
+    } else if (povValue == 0) {
+      launchLow();
+    }
+
     // This method will be called once per scheduler run
-    m_setpointRPM = SmartDashboard.getNumber("Launcher target RPM", m_setpointRPM);
+    // m_setpointRPM = SmartDashboard.getNumber("Launcher target RPM", m_setpointRPM);
     SmartDashboard.putNumber("Current RPM", m_encoder.getVelocity());
   }
 
