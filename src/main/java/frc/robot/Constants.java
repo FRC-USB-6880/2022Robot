@@ -45,7 +45,7 @@ public final class Constants {
         private final static double _gearRatio = 10.71;
         private final static double _wheelDiameter_m = Units.inchesToMeters(6);
         public final static double kWheelCircumference_m = Math.PI * _wheelDiameter_m;
-        // ToDo: trackWidth in meters; to be calculated with sysID tool
+        // ToDo: trackWidth in meters; to be calculated with sysID tool or measured with tape
         private final static double _trackWidth = Units.inchesToMeters(22);
         public static final DifferentialDriveKinematics kDriveKinematics =
             new DifferentialDriveKinematics(_trackWidth);
@@ -64,8 +64,8 @@ public final class Constants {
         public final static double kIDriveVel = 0.0;
         public final static double kDDriveVel = 0.0;
 
-        public final static double kMaxSpeed_m_s = 3.0; // Max velocity 3 meters per second
-        public final static double kMaxAccel_m_ss = 3.0; // Max acceleration 3 m/s^2
+        public final static double kMaxSpeed_m_s = Units.feetToMeters(10); // Max velocity 10 ft per second
+        public final static double kMaxAccel_m_ss = Units.feetToMeters(20); // Max acceleration 20 ft/s^2
     }
     public static final class AutoConstants {
         // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
@@ -91,7 +91,7 @@ public final class Constants {
         public final static double wheelkFF = 0.000015; 
         public final static double kMaxOutput = 1; 
         public final static double kMinOutput = -1;
-        public final static double desiredRPM = 3000;
+        public final static double desiredRPM = 4000;
         public final static double maxRPM = 5700;
         // The following fixed speed is applicable only if not using the FeedForward or Feedback controllers
         public final static double wheelMotorSpeed = 0.6;
@@ -138,7 +138,8 @@ public final class Constants {
         // The following are constrains for the TrapezoidalProfile
         // Note that the TrapezoidalProfile takes values in Radians whereas SparkMax's PIDController
         // use number of Shaft Rotations
-        private final static double _maxVelocityArmDegPerSec = 60; // => 2 seconds from closed-to-opened position
+        // Note: Max velocity the neo+30:1 reduction can give is 14.4 radians / sec. (from AriMB design spreadsheet)
+        private final static double _maxVelocityArmDegPerSec = 100; // => 2 seconds from closed-to-opened position
         private final static double _secondsToPeakVel = 1; // => 1 second to 0-to-peak velocity
         private final static double _maxAccelArmDegPerSecSquared = _maxVelocityArmDegPerSec / _secondsToPeakVel; 
         public final static double kMaxVelocityRadPerSecond = Units.degreesToRadians(_maxVelocityArmDegPerSec);
@@ -228,8 +229,8 @@ public final class Constants {
         // The following are constrains for the TrapezoidalProfile
         // Note that the TrapezoidalProfile takes values in Meters whereas SparkMax's PIDController
         // use number of Shaft Rotations
-        private final static double _maxVelElevaor_in_p_s = 10; // => 10 inches-per-sec velocity
-        private final static double _secondsToPeakVel = 1; // => 1 second to 0-to-peak velocity
+        private final static double _maxVelElevaor_in_p_s = 5.98; // => 5.98 inches-per-sec velocity
+        private final static double _secondsToPeakVel = 0.2; // => 0.2 second to 0-to-peak velocity
         private final static double _maxAccelElevator_in_p_ss = 
             _maxVelElevaor_in_p_s / _secondsToPeakVel;
         public final static double kMaxVelMetersPerSec = Units.inchesToMeters(_maxVelElevaor_in_p_s);

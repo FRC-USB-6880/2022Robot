@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SelectCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.OIConstants;
+import frc.robot.commands.ArmTeleopCommand;
+import frc.robot.commands.LauncherTeleopCommand;
 import frc.robot.subsystems.DriveTrain;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.IntakeArm;
@@ -40,13 +42,6 @@ public class RobotContainer {
   private final AutoCommands m_autoCommands = 
     new AutoCommands(m_drive, m_intakeWheels, m_intakeArm, m_indexer, m_launcher);
   
-  private enum ArmCommandSelector {
-    OPEN_ARM, CLOSE_ARM, DO_NOTHING
-  }
-
-  private enum launchSpeedCommandSelector{
-    HIGH_SPEED, LOW_SPEED, DO_NOTHING
-  }
   // private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
 
   private final XboxController m_xbox1 = new XboxController(OIConstants.xbox1_port);
@@ -66,30 +61,11 @@ public class RobotContainer {
     m_drive.setDefaultCommand( new RunCommand(
       () -> m_drive.arcadeDrive(-m_xbox1.getLeftY()/2, m_xbox1.getRightX()/3), m_drive));
     
-    m_intakeArm.setDefaultCommand(new SelectCommand(Map.ofEntries(
-      Map.entry(ArmCommandSelector.OPEN_ARM, new InstantCommand(() -> m_intakeArm.openArm(), m_intakeArm)),
-      Map.entry(ArmCommandSelector.CLOSE_ARM, new InstantCommand(() -> m_intakeArm.closeArm(), m_intakeArm)),
-      Map.entry(ArmCommandSelector.DO_NOTHING, new InstantCommand(() -> m_intakeArm.doNothing(), m_intakeArm))
-    ), this::armSelect));
+    m_intakeArm.setDefaultCommand(new ArmTeleopCommand(m_intakeArm, () -> m_xbox2.getLeftTriggerAxis(), () -> m_xbox2.getRightTriggerAxis()));
 
-    m_launcher.setDefaultCommand(new SelectCommand(Map.ofEntries(
-      Map.entry(launchSpeedCommandSelector.HIGH_SPEED, new InstantCommand(() -> m_launcher.launchHigh(), m_launcher)),
-      Map.entry(launchSpeedCommandSelector.LOW_SPEED, new InstantCommand(() -> m_launcher.launchLow(), m_launcher)),
-      Map.entry(launchSpeedCommandSelector.DO_NOTHING, new InstantCommand(() -> m_launcher.doNothing(), m_launcher))
-    ), this::launchSpeedSelect));
+    m_launcher.setDefaultCommand(new LauncherTeleopCommand(m_launcher, () -> m_xbox2.getPOV()));
   }
 
-  public ArmCommandSelector armSelect() {
-    if(m_xbox2.getLeftTriggerAxis() > 0) { return ArmCommandSelector.OPEN_ARM;}
-    else if(m_xbox2.getRightTriggerAxis() > 0){ return ArmCommandSelector.CLOSE_ARM;}
-    else { return ArmCommandSelector.DO_NOTHING; }
-  }
-
-  public launchSpeedCommandSelector launchSpeedSelect(){
-    if(m_xbox2.getPOV() == 180){ return launchSpeedCommandSelector.HIGH_SPEED; }
-    else if(m_xbox2.getPOV() == 0){ return launchSpeedCommandSelector.LOW_SPEED; }
-    else { return launchSpeedCommandSelector.DO_NOTHING; }
-  }
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
